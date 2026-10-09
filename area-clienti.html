@@ -192,6 +192,24 @@ const supabase = createClient(
 );
 
 const messaggio = document.getElementById('messaggio');
+
+async function salvaProfilo(user, nome, cognome, telefono, dataNascita) {
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({
+      id: user.id,
+      full_name: [nome, cognome].filter(Boolean).join(' '),
+      phone: telefono || null,
+      birth_date: dataNascita || null,
+      email: user.email || null
+    }, { onConflict: 'id' });
+
+  if (error) {
+    console.error('Errore salvataggio profilo:', error);
+    throw error;
+  }
+}
+
 const esci = document.getElementById('esci');
 
 async function aggiorna(session) {
@@ -314,9 +332,23 @@ document.getElementById('registrazione')
     if (error) {
       messaggio.textContent = 'Errore: ' + error.message;
     } else if (data.session) {
-      await aggiorna(data.session);
-      messaggio.hidden = false;
-      messaggio.textContent = 'Registrazione completata!';
+  try {
+    await salvaProfilo(
+      data.session.user,
+      nome,
+      cognome,
+      telefono,
+      dataNascita
+    );
+    await aggiorna(data.session);
+    messaggio.hidden = false;
+    messaggio.textContent = 'Registrazione completata!';
+  } catch (errore) {
+    messaggio.hidden = false;
+    messaggio.textContent =
+      'Account creato, ma errore nel salvataggio del profilo. Contatta l’assistenza.';
+  }
+
     } else {
       messaggio.textContent =
         'Registrazione avviata. Controlla la tua email per confermare l’account.';
@@ -414,27 +446,48 @@ formDati.addEventListener('submit', async (e) => {
 
   const { data, error } = await supabase.auth.updateUser(aggiornamento);
 
-  if (error) {
-    messaggio.textContent = 'Errore durante il salvataggio: ' + error.message;
+if (error) {
+  messaggio.textContent = 'Errore aggiornamento account: ' + error.message;
+  return;
+}
+
+if (data.user) {
+  try {
+    await salvaProfilo(
+      data.user,
+      nome,
+      cognome,
+      telefono,
+      dataNascita
+    );
+  } catch (errore) {
+    messaggio.textContent =
+      'Account aggiornato, ma errore nel salvataggio del profilo.';
+    console.error(errore);
     return;
   }
 
-  if (data.user) {
-    document.getElementById('nome-cliente').textContent =
-      'Ciao, ' + [nome, cognome].filter(Boolean).join(' ') + '!';
+  document.getElementById('nome-cliente').textContent =
+    'Ciao, ' + [nome, cognome].filter(Boolean).join(' ') + '!';
+  document.getElementById('nome-profilo').textContent =
+    [nome, cognome].filter(Boolean).join(' ');
+  document.getElementById('nascita-profilo').textContent =
+    dataNascita.split('-').reverse().join('/');
+  document.getElementById('telefono-profilo').textContent =
+    telefono || 'Non inserito';
+  document.getElementById('email-cliente').textContent =
+    data.user.email || nuovaEmail;
+}
 
-    document.getElementById('email-cliente').textContent =
-      data.user.email || nuovaEmail;
-  }
+formDati.hidden = true;
 
-  formDati.hidden = true;
+if (aggiornamento.email) {
+  messaggio.textContent =
+    'Dati salvati. Per cambiare email, controlla la nuova casella e conferma la modifica.';
+} else {
+  messaggio.textContent = 'Dati personali aggiornati correttamente!';
+}
 
-  if (aggiornamento.email) {
-    messaggio.textContent =
-      'Dati salvati. Per cambiare email, controlla la nuova casella e conferma la modifica.';
-  } else {
-    messaggio.textContent = 'Dati personali aggiornati correttamente!';
-  }
 });
 
 esci.addEventListener('click', async () => {

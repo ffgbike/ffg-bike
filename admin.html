@@ -61,6 +61,15 @@
     <label for="cliente">UID cliente</label>
     <input id="cliente" placeholder="Scansiona o inserisci l'UID">
 
+    <div id="profilo-cliente" hidden style="margin-top:12px;padding:14px;background:#202020;border-radius:8px;">
+  <h3 style="margin-top:0;">Verifica cliente</h3>
+  <p><strong>Nome e cognome:</strong> <span id="cliente-nome">—</span></p>
+  <p><strong>Data di nascita:</strong> <span id="cliente-nascita">—</span></p>
+  <p><strong>Email:</strong> <span id="cliente-email">—</span></p>
+  <p><strong>Telefono:</strong> <span id="cliente-telefono">—</span></p>
+  <p id="stato-profilo">Profilo non verificato</p>
+</div>
+
     <label for="importo">Importo acquisto (€)</label>
     <input id="importo" type="number" min="0" step="0.01"
            placeholder="Es. 50">
@@ -94,6 +103,52 @@
     const pannello = document.getElementById('pannello');
     const messaggio = document.getElementById('messaggio');
     let scanner = null;
+let profiloVerificato = false;
+
+async function verificaCliente(uid) {
+  const scheda = document.getElementById('profilo-cliente');
+  const stato = document.getElementById('stato-profilo');
+
+  profiloVerificato = false;
+  scheda.hidden = true;
+
+  const { data, error } = await db
+    .from('profiles')
+    .select('full_name, birth_date, email, phone')
+    .eq('id', uid)
+    .maybeSingle();
+
+  if (
+    error ||
+    !data ||
+    !data.full_name ||
+    !data.birth_date ||
+    !data.email
+  ) {
+    document.getElementById('cliente-nome').textContent = '—';
+    document.getElementById('cliente-nascita').textContent = '—';
+    document.getElementById('cliente-email').textContent = '—';
+    document.getElementById('cliente-telefono').textContent = '—';
+    stato.textContent =
+      'Profilo non verificato: impossibile assegnare punti.';
+    scheda.hidden = false;
+    return false;
+  }
+
+  document.getElementById('cliente-nome').textContent =
+    data.full_name;
+  document.getElementById('cliente-nascita').textContent =
+    data.birth_date.split('-').reverse().join('/');
+  document.getElementById('cliente-email').textContent =
+    data.email;
+  document.getElementById('cliente-telefono').textContent =
+    data.phone || 'Non inserito';
+
+  stato.textContent = 'Profilo verificato';
+  scheda.hidden = false;
+  profiloVerificato = true;
+  return true;
+}
 
     function avviso(testo) {
       messaggio.textContent = testo;
