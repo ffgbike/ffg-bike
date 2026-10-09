@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3F9995">
+    <title>F.F.G. BIKE | Biciclette e assistenza</title>
+
+    <style>
+        :root {
+            --sfondo: #E8E9E6;
+            --petrolio: #3F9995;
+            --nero: #171918;
+            --bianco: #FFFFFF;
+            --testo: #555B58;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--sfondo);
+            color: var(--nero);
+        }
+
+        header {
+            background: var(--nero);
+            color: var(--bianco);
+            padding: 20px 7%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            font-size: 25px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .logo-img {
+    display: block;
+    width: 170px;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+        nav {
+            display: flex;
+            gap: 22px;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: var(--bianco);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        nav a:hover {
+            color: var(--petrolio);
+        }
+
+        .hero {
+            padding: 75px 7% 85px;
+            background: linear-gradient(135deg, #FFFFFF 0%, #E8E9E6 65%);
+        }
+
+        .etichetta {
+            display: inline-block;
+            background: #D3E8E5;
+            color: #236B68;
+            padding: 9px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        h1 {
+            font-size: clamp(38px, 7vw, 68px);
+            line-height: 1.05;
+            margin: 24px 0 18px;
+            max-width: 750px;
+        }
+
+        h1 span {
+            color: var(--petrolio);
+        }
+
+        .hero p {
+            color: var(--testo);
+            font-size: 18px;
+            line-height: 1.7;
+            max-width: 580px;
+        }
+
+        .azioni {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 28px;
+        }
+
+        .bottone {
+            display: inline-block;
+            padding: 14px 22px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .bottone:hover {
+            transform: translateY(-2px);
+        }
+
+        .primario {
+            background: var(--petrolio);
+            color: var(--bianco);
+        }
+
+        .secondario {
+            background: var(--nero);
+            color: var(--bianco);
+        }
+
+        section {
+            padding: 65px 7%;
+        }
+
+        .titolo-sezione {
+            font-size: 32px;
+            margin: 0 0 12px;
+        }
+
+        .descrizione {
+            color: var(--testo);
+            line-height: 1.7;
+            margin-bottom: 30px;
+        }
+
+        .griglia {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .scheda {
+            background: var(--bianco);
+            border-radius: 14px;
+            padding: 28px;
+            border: 1px solid #DADDD9;
+        }
+
+        .icona {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: #DDF0ED;
+            display: grid;
+            place-items: center;
+            font-size: 25px;
+            margin-bottom: 18px;
+        }
+
+        .scheda h3 {
+            font-size: 20px;
+            margin: 0 0 10px;
+        }
+
+        .scheda p {
+            color: var(--testo);
+            line-height: 1.65;
+            margin-bottom: 0;
+        }
+
+        .fidelity {
+            background: var(--nero);
+            color: var(--bianco);
+        }
+
+        .fidelity .descrizione {
+            color: #D1D7D4;
+        }
+
+        .fidelity .scheda {
+            background: #242927;
+            border-color: #414946;
+        }
+
+        .fidelity .scheda p {
+            color: #D1D7D4;
+        }
+
+        .fidelity .icona {
+            background: #DDF0ED;
+        }
+
+        .contatti {
+            background: var(--bianco);
+        }
+
+        footer {
+            background: var(--nero);
+            color: #D1D7D4;
+            text-align: center;
+            padding: 25px 7%;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        footer strong {
+            color: var(--petrolio);
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 20px 6%;
+            }
+
+            nav {
+                gap: 14px;
+            }
+
+            .hero {
+                padding: 55px 6%;
+            }
+
+            section {
+                padding: 48px 6%;
+            }
+
+            .titolo-sezione {
+                font-size: 28px;
+            }
+        }
+    </style>
+    <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const SUPABASE_URL = 'https://zcvbphyebpccimbnbpuc.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_7mkW2BqMxX38i3G5z_BolA_5kY0yDLB';
+
+    const supabase = createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+    );
+
+    window.supabaseClient = supabase;
+
+    console.log('Connessione a Supabase inizializzata.');
+</script>
+</head>
+
+<body>
+
+    <header>
+        
+<div class="logo">
+    <img src="images/LOGO.png" alt="F.F.G. BIKE" class="logo-img">
+</div>
+
+        <nav>
+            <a href="#servizi">Servizi</a>
+            <a href="#fidelity">BIKE POINTS</a>
+            <a href="#contatti">Contatti</a>
+            <a href="area-clienti.html">Area personale</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <span class="etichetta">PASSIONE PER LE DUE RUOTE</span>
+
+            <h1>La tua prossima avventura inizia con <span>F.F.G. BIKE.</span></h1>
+
+            <p>
+                Biciclette, mobilità elettrica, riparazioni e assistenza.
+                Siamo qui per accompagnarti in ogni pedalata.
+            </p>
+
+            <div class="azioni">
+                <a class="bottone primario" href="#servizi">Scopri i servizi</a>
+                <a class="bottone secondario" href="#fidelity">Scopri BIKE POINTS</a>
+            </div>
+        </section>
+
+        <section id="servizi">
+            <h2 class="titolo-sezione">Tutto per le tue due ruote</h2>
+            <p class="descrizione">
+                Dalla scelta della bici alla manutenzione: trovi qui quello che ti serve.
+            </p>
+
+            <div class="griglia">
+                <article class="scheda">
+                    <div class="icona">🚲</div>
+                    <h3>Biciclette</h3>
+                    <p>Scopri le biciclette disponibili e trova quella adatta alle tue esigenze.</p>
+                </article>
+
+                <article class="scheda">
+                    <div class="icona">⚡</div>
+                    <h3>Bici elettriche</h3>
+                    <p>Soluzioni per muoverti in modo pratico, anche con la pedalata assistita.</p>
+                </article>
+
+                <article class="scheda">
+                    <div class="icona">🔧</div>
+                    <h3>Riparazioni e assistenza</h3>
+                    <p>Manutenzione e riparazioni per aiutarti a tornare in sella.</p>
+                </article>
+
+                <article class="scheda">
+                    <div class="icona">🛴</div>
+                    <h3>Monopattini e usato</h3>
+                    <p>Chiedici informazioni sui modelli e sui prodotti disponibili in negozio.</p>
+                </article>
+            </div>
+        </section>
+
+        <section id="fidelity" class="fidelity">
+            <span class="etichetta">IL TUO NEGOZIO, I TUOI VANTAGGI</span>
+
+            <h2 class="titolo-sezione" style="margin-top: 22px;">Scopri BIKE POINTS</h2>
+
+            <p class="descrizione">
+                La tessera fedeltà digitale di F.F.G. BIKE.
+                Accumula punti con i tuoi acquisti e le riparazioni,
+                e scopri i vantaggi riservati ai clienti.
+            </p>
+
+            <div class="griglia">
+                <article class="scheda">
+                    <div class="icona">💳</div>
+                    <h3>La tua tessera</h3>
+                    <p>Una tessera digitale personale, sempre a portata di telefono.</p>
+                </article>
+
+                <article class="scheda">
+                    <div class="icona">⭐</div>
+                    <h3>Accumula punti</h3>
+                    <p>Segui i tuoi punti e scopri i premi disponibili nel programma.</p>
+                </article>
+
+                <article class="scheda">
+                    <div class="icona">🎁</div>
+                    <h3>I tuoi premi</h3>
+                    <p>Consulta i vantaggi che potrai riscattare quando saranno disponibili.</p>
+                </article>
+            </div>
+
+            <div class="azioni">
+                <a class="bottone primario" href="#contatti">Chiedi informazioni</a>
+            </div>
+        </section>
+
+        <section id="contatti" class="contatti">
+            <h2 class="titolo-sezione">Vieni a trovarci</h2>
+            <p class="descrizione">
+                Hai bisogno di informazioni su una bici, una riparazione
+                o BIKE POINTS? Contattaci o passa in negozio.
+            </p>
+
+            <!-- Inseriremo qui indirizzo, telefono, orari e collegamenti ufficiali. -->
+            <div class="scheda">
+                <h3>F.F.G. BIKE di Ferioli</h3>
+                <p>
+                    Il tuo punto di riferimento per biciclette,
+                    mobilità elettrica e assistenza.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <strong>F.F.G. BIKE</strong> di Ferioli<br>
+        Biciclette · Mobilità elettrica · Assistenza<br>
+        © 2026 F.F.G. BIKE
+    </footer>
+
+</body>
+</html>

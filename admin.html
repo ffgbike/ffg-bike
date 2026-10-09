@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FFG BIKE - Amministrazione</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 520px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #f4f5f7;
+      color: #222;
+    }
+    h1 { text-align: center; }
+    section {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+    }
+    input, button {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      font-size: 16px;
+    }
+    button {
+      cursor: pointer;
+      background: #202020;
+      color: white;
+      border: 0;
+      border-radius: 7px;
+    }
+    button:disabled { opacity: .5; }
+    #scanner { margin-top: 12px; }
+    #messaggio { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <h1>FFG BIKE</h1>
+  <p style="text-align:center">Pannello amministratore</p>
+
+  <section id="accesso">
+    <h2>Accedi</h2>
+    <input id="email" type="email" placeholder="La tua email">
+    <input id="password" type="password" placeholder="La tua password">
+    <button id="btn-accesso">Accedi</button>
+  </section>
+
+  <section id="pannello" hidden>
+    <h2>Gestione BIKE POINTS</h2>
+
+    <button id="btn-scansione">Scansiona QR cliente</button>
+    <div id="scanner"></div>
+
+    <label for="cliente">UID cliente</label>
+    <input id="cliente" placeholder="Scansiona o inserisci l'UID">
+
+    <label for="importo">Importo acquisto (€)</label>
+    <input id="importo" type="number" min="0" step="0.01"
+           placeholder="Es. 50">
+
+    <p id="punti-calcolati">Punti acquisto: 0</p>
+
+    <label for="bonus">Punti bonus</label>
+    <input id="bonus" type="number" min="0" step="1" value="0">
+
+    <label for="motivo">Motivo del bonus</label>
+    <input id="motivo" placeholder="Es. Compleanno o promozione">
+
+    <button id="btn-assegna">Conferma assegnazione</button>
+    <button id="btn-esci">Esci</button>
+  </section>
+
+  <p id="messaggio" role="status"></p>
+
+  <script>
+    const SUPABASE_URL =
+      'https://zcvbphyebpccimbnbpuc.supabase.co';
+
+    // Inserisci qui la stessa publishable key di area-clienti.html
+    const SUPABASE_KEY = 'sb_publishable_7mkW2BqMxX38i3G5z_BolA_5kY0yDLB';
+
+    const db = window.supabase.createClient(
+      SUPABASE_URL, SUPABASE_KEY
+    );
+
+    const accesso = document.getElementById('accesso');
+    const pannello = document.getElementById('pannello');
+    const messaggio = document.getElementById('messaggio');
+    let scanner = null;
+
+    function avviso(testo) {
+      messaggio.textContent = testo;
+    }
+
+    async function controllaAccesso() {
+      const { data: { session } } = await db.auth.getSession();
+
+      accesso.hidden = !!session;
+      pannello.hidden = true;
+
+      if (!session) return;
+
+      const { data, error } = await db.rpc('is_admin');
+
+      if (error || data !== true) {
+        await db.auth.signOut();
+        accesso.hidden = false;
+        pannello.hidden = true;
+        avviso('Accesso amministratore non autorizzato.');
+        return;
+      }
+
+      accesso.hidden = true;
+      pannello.hidden = false;
+      avviso('Accesso amministratore verificato.');
+    }
+
+    document.getElementById('btn-accesso').onclick = async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      const { error } = await db.auth.signInWithPassword({
+        email, password
+      });
+
+      if (error) {
+        avviso('Accesso non riuscito: ' + error.message);
+        return;
+      }
+
+      await controllaAccesso();
+    };
+
+    document.getElementById('btn-scansione').onclick = async () => {
+      if (scanner) {
+        await scanner.stop().catch(() => {});
+        scanner = null;
+        document.getElementById('scanner').innerHTML = '';
+      }
+
+      scanner = new Html5Qrcode('scanner');
+
+      try {
+        await scanner.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 220, height: 220 } },
+          async (testo) => {
+            document.getElementById('cliente').value = testo.trim();
+            await scanner.stop();
+            scanner = null;
+            document.getElementById('scanner').innerHTML = '';
+            avviso('QR cliente letto.');
+          },
+          () => {}
+        );
+      } catch (errore) {
+        scanner = null;
+        avviso('Fotocamera non disponibile. Verifica i permessi e usa HTTPS.');
+      }
+    };
+
+    function aggiornaCalcolo() {
+      const importo = Number(document.getElementById('importo').value);
+      const punti = Number.isFinite(importo) && importo > 0
+        ? Math.floor(importo / 15)
+        : 0;
+
+      document.getElementById('punti-calcolati').textContent =
+        'Punti acquisto: ' + punti;
+    }
+
+    document.getElementById('importo').oninput = aggiornaCalcolo;
+
+    document.getElementById('btn-assegna').onclick = async () => {
+      const cliente = document.getElementById('cliente').value.trim();
+      const importo = Number(document.getElementById('importo').value);
+      const bonus = Number(document.getElementById('bonus').value || 0);
+      const motivo = document.getElementById('motivo').value.trim();
+      const pulsante = document.getElementById('btn-assegna');
+
+      const uuidValido =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+      if (!uuidValido.test(cliente)) {
+        avviso('Scansiona un QR cliente valido.');
+        return;
+      }
+
+      if (!Number.isFinite(importo) || importo < 0 ||
+          !Number.isInteger(bonus) || bonus < 0) {
+        avviso('Controlla importo e bonus.');
+        return;
+      }
+
+      if (importo === 0 && bonus === 0) {
+        avviso('Inserisci un acquisto o un bonus.');
+        return;
+      }
+
+      if (bonus > 0 && !motivo) {
+        avviso('Scrivi il motivo del bonus.');
+        return;
+      }
+
+      pulsante.disabled = true;
+      avviso('Registrazione in corso...');
+
+      try {
+        const { data, error } = await db.rpc('admin_add_points', {
+          p_customer_id: cliente,
+          p_amount: importo,
+          p_bonus: bonus,
+          p_reason: motivo
+        });
+
+        if (error) throw error;
+
+        avviso(
+          'Operazione completata! Punti acquisto: ' +
+          data.purchase_points + ', bonus: ' + data.bonus_points +
+          ', punti aggiunti: ' + data.added_points +
+          ', saldo: ' + data.balance + '.'
+        );
+
+        document.getElementById('cliente').value = '';
+        document.getElementById('importo').value = '';
+        document.getElementById('bonus').value = '0';
+        document.getElementById('motivo').value = '';
+        aggiornaCalcolo();
+      } catch (errore) {
+        avviso('Errore: ' + errore.message);
+      } finally {
+        pulsante.disabled = false;
+      }
+    };
+
+    document.getElementById('btn-esci').onclick = async () => {
+      if (scanner) {
+        await scanner.stop().catch(() => {});
+        scanner = null;
+      }
+
+      await db.auth.signOut();
+      await controllaAccesso();
+      avviso('Sei uscito dal pannello.');
+    };
+
+    controllaAccesso();
+  </script>
+</body>
+</html>

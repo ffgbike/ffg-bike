@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Area personale | F.F.G. BIKE</title>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 30px 16px;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .area {
+      max-width: 430px;
+      margin: 40px auto;
+      padding: 28px;
+      background: #202020;
+      border-radius: 14px;
+    }
+
+    h1, h2 { text-align: center; }
+
+    label { display: block; margin-top: 16px; }
+
+    input {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 12px;
+      margin-top: 7px;
+      border-radius: 6px;
+      border: 1px solid #777;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 16px;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+        outline: none;
+        box-shadow: none;
+    }
+
+    .torna {
+      display: block;
+      margin-top: 24px;
+      text-align: center;
+      color: white;
+    }
+
+    #messaggio { overflow-wrap: anywhere; }
+  </style>
+</head>
+
+<body>
+  <main class="area">
+    <h1>F.F.G. BIKE</h1>
+    <h2>Area personale</h2>
+    <p id="invito-accesso" style="text-align:center">Accedi o registrati per BIKE POINTS</p>
+
+    <form id="registrazione">
+  <h3>Crea un account</h3>
+
+  <label for="reg-nome">Nome</label>
+  <input id="reg-nome" type="text" autocomplete="given-name" required>
+
+  <label for="reg-cognome">Cognome</label>
+  <input id="reg-cognome" type="text" autocomplete="family-name" required>
+
+  <label for="reg-telefono">Telefono (facoltativo)</label>
+  <input id="reg-telefono" type="tel" autocomplete="tel">
+
+  <label for="reg-data-nascita">Data di nascita</label>
+  <input id="reg-data-nascita" type="date" autocomplete="bday" required>
+
+  <label for="reg-email">Email</label>
+  <input id="reg-email" type="email" autocomplete="email" required>
+
+  <label for="reg-password">Password</label>
+  <input id="reg-password" type="password" minlength="8" autocomplete="new-password" required>
+
+  <label for="reg-conferma-password">Conferma password</label>
+  <input id="reg-conferma-password" type="password" minlength="8" autocomplete="new-password" required>
+
+  <button type="submit">Registrati</button>
+</form>
+
+    <hr style="margin-top:28px">
+
+    <form id="accesso">
+      <h3>Hai già un account?</h3>
+      <label for="login-email">Email</label>
+      <input id="login-email" type="email" required>
+
+      <label for="login-password">Password</label>
+      <input id="login-password" type="password" required>
+
+      <button type="submit">Accedi</button>
+    </form>
+
+    <p id="messaggio" role="status">Non hai effettuato l'accesso.</p>
+    <section id="scheda-personale" hidden>
+  <h2 id="nome-cliente">Ciao!</h2>
+  <p>IL TUO PROFILO</p>
+
+<div class="scheda-dato">
+  <strong>Nome e cognome</strong>
+  <p id="nome-profilo">—</p>
+</div>
+
+<div class="scheda-dato">
+  <strong>Data di nascita</strong>
+  <p id="nascita-profilo">—</p>
+</div>
+
+<div class="scheda-dato">
+  <strong>Telefono</strong>
+  <p id="telefono-profilo">Non inserito</p>
+</div>
+
+<div class="scheda-dato">
+  <strong>Email</strong>
+  <p id="email-cliente"></p>
+</div>
+
+<div class="scheda-qr">
+  <h3>Il tuo QR personale</h3>
+  <p>Mostra questo codice al personale per accumulare BIKE POINTS.</p>
+
+  <canvas id="qr-cliente"></canvas>
+
+  <p id="stato-qr">Caricamento del QR...</p>
+</div>
+
+<button type="button" id="modifica-dati">
+  Completa / modifica i tuoi dati
+</button>
+
+<form id="dati-personali-form" hidden>
+  <h3>I tuoi dati personali</h3>
+
+  <label for="dati-nome">Nome</label>
+  <input id="dati-nome" type="text" autocomplete="given-name" required>
+
+  <label for="dati-cognome">Cognome</label>
+  <input id="dati-cognome" type="text" autocomplete="family-name" required>
+
+  <label for="dati-telefono">Telefono</label>
+  <input id="dati-telefono" type="tel" autocomplete="tel">
+
+  <label for="dati-data-nascita">Data di nascita</label>
+  <input id="dati-data-nascita" type="date" autocomplete="bday" required>
+
+  <label for="dati-email">Email</label>
+  <input id="dati-email" type="email" autocomplete="email" required>
+
+  <button type="submit">Salva i dati</button>
+  <button type="button" id="annulla-modifica">Annulla</button>
+</form>
+
+  <div class="scheda-punti">
+    <p>IL TUO SALDO</p>
+    <h2 id="saldo-punti">⭐ 0 BIKE POINTS</h2>
+    <p>Accumula punti con i tuoi acquisti!</p>
+  </div>
+</section>
+
+    <button id="esci" hidden>Esci dall'account</button>
+
+    <a class="torna" href="index.html">← Torna alla pagina principale</a>
+  </main>
+
+  <script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import QRCode from 'https://esm.sh/qrcode@1.5.4';
+
+const SUPABASE_URL = 'https://zcvbphyebpccimbnbpuc.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_7mkW2BqMxX38i3G5z_BolA_5kY0yDLB';
+
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
+const messaggio = document.getElementById('messaggio');
+const esci = document.getElementById('esci');
+
+async function aggiorna(session) {
+  const scheda = document.getElementById('scheda-personale');
+  const accesso = document.getElementById('accesso');
+  const registrazione = document.getElementById('registrazione');
+  const invitoAccesso = document.getElementById('invito-accesso');
+
+  if (session?.user) {
+    const utente = session.user;
+    const email = utente.email || '';
+
+    const nome = [
+      utente.user_metadata?.nome,
+      utente.user_metadata?.cognome
+    ].filter(Boolean).join(' ') || email.split('@')[0] || 'Cliente';
+
+    scheda.hidden = false;
+    document.getElementById('nome-cliente').textContent =
+      'Ciao, ' + nome + '!';
+
+    document.getElementById('email-cliente').textContent = email;
+    document.getElementById('nome-profilo').textContent =
+  [utente.user_metadata?.nome, utente.user_metadata?.cognome]
+    .filter(Boolean).join(' ') || 'Non inserito';
+
+const dataNascita = utente.user_metadata?.data_nascita;
+
+document.getElementById('nascita-profilo').textContent =
+  dataNascita
+    ? dataNascita.split('-').reverse().join('/')
+    : 'Non inserita';
+
+document.getElementById('telefono-profilo').textContent =
+  utente.user_metadata?.telefono || 'Non inserito';
+
+const canvasQR = document.getElementById('qr-cliente');
+const statoQR = document.getElementById('stato-qr');
+
+try {
+  await QRCode.toCanvas(canvasQR, utente.id, {
+    width: 220,
+    margin: 2,
+    errorCorrectionLevel: 'M'
+  });
+
+  statoQR.textContent = 'Il tuo QR personale è pronto!';
+} catch (errore) {
+  statoQR.textContent = 'Errore durante la creazione del QR.';
+  console.error('Errore QR:', errore);
+}
+
+    messaggio.hidden = true;
+    invitoAccesso.hidden = true;
+    accesso.hidden = true;
+    registrazione.hidden = true;
+    esci.hidden = false;
+
+    const saldo = document.getElementById('saldo-punti');
+    saldo.textContent = '⭐ Caricamento BIKE POINTS…';
+
+    const { data, error } = await supabase
+      .from('loyalty_accounts')
+      .select('points')
+      .eq('user_id', utente.id)
+      .maybeSingle();
+
+    if (error) {
+      saldo.textContent = 'Non riesco a caricare i punti.';
+      console.error('Errore BIKE POINTS:', error);
+    } else {
+      saldo.textContent =
+        '⭐ ' + (data?.points ?? 0) + ' BIKE POINTS';
+    }
+  } else {
+    scheda.hidden = true;
+    messaggio.hidden = false;
+    messaggio.textContent = 'Non hai effettuato l’accesso.';
+    invitoAccesso.hidden = false;
+    accesso.hidden = false;
+    registrazione.hidden = false;
+    esci.hidden = true;
+  }
+}
+
+document.getElementById('registrazione')
+  .addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    messaggio.hidden = false;
+    messaggio.textContent = 'Registrazione in corso…';
+
+    const nome = document.getElementById('reg-nome').value.trim();
+    const cognome = document.getElementById('reg-cognome').value.trim();
+    const telefono = document.getElementById('reg-telefono').value.trim();
+    const dataNascita = document.getElementById('reg-data-nascita').value;
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const confermaPassword =
+      document.getElementById('reg-conferma-password').value;
+
+    if (password !== confermaPassword) {
+      messaggio.textContent = 'Le due password non coincidono.';
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          nome,
+          cognome,
+          telefono: telefono || null,
+          data_nascita: dataNascita
+        }
+      }
+    });
+
+    if (error) {
+      messaggio.textContent = 'Errore: ' + error.message;
+    } else if (data.session) {
+      await aggiorna(data.session);
+      messaggio.hidden = false;
+      messaggio.textContent = 'Registrazione completata!';
+    } else {
+      messaggio.textContent =
+        'Registrazione avviata. Controlla la tua email per confermare l’account.';
+    }
+  });
+
+document.getElementById('accesso')
+  .addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    messaggio.hidden = false;
+    messaggio.textContent = 'Accesso in corso…';
+
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      messaggio.textContent = 'Errore: ' + error.message;
+    } else {
+      await aggiorna(data.session);
+    }
+  });
+const pulsanteModifica = document.getElementById('modifica-dati');
+const formDati = document.getElementById('dati-personali-form');
+
+pulsanteModifica.addEventListener('click', async () => {
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    messaggio.hidden = false;
+    messaggio.textContent = 'Accedi nuovamente per modificare i dati.';
+    return;
+  }
+
+  document.getElementById('dati-nome').value =
+    user.user_metadata?.nome || '';
+
+  document.getElementById('dati-cognome').value =
+    user.user_metadata?.cognome || '';
+
+  document.getElementById('dati-telefono').value =
+    user.user_metadata?.telefono || '';
+
+  document.getElementById('dati-data-nascita').value =
+    user.user_metadata?.data_nascita || '';
+
+  document.getElementById('dati-email').value =
+    user.email || '';
+
+  formDati.hidden = false;
+});
+
+document.getElementById('annulla-modifica')
+  .addEventListener('click', () => {
+    formDati.hidden = true;
+  });
+
+formDati.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const nome = document.getElementById('dati-nome').value.trim();
+  const cognome = document.getElementById('dati-cognome').value.trim();
+  const telefono = document.getElementById('dati-telefono').value.trim();
+  const dataNascita = document.getElementById('dati-data-nascita').value;
+  const nuovaEmail = document.getElementById('dati-email').value.trim();
+
+  messaggio.hidden = false;
+  messaggio.textContent = 'Salvataggio in corso…';
+
+  const { data: { user }, error: erroreUtente } =
+    await supabase.auth.getUser();
+
+  if (erroreUtente || !user) {
+    messaggio.textContent = 'Sessione scaduta. Accedi nuovamente.';
+    return;
+  }
+
+  const aggiornamento = {
+    data: {
+      nome,
+      cognome,
+      telefono: telefono || null,
+      data_nascita: dataNascita
+    }
+  };
+
+  if (nuovaEmail.toLowerCase() !== (user.email || '').toLowerCase()) {
+    aggiornamento.email = nuovaEmail;
+  }
+
+  const { data, error } = await supabase.auth.updateUser(aggiornamento);
+
+  if (error) {
+    messaggio.textContent = 'Errore durante il salvataggio: ' + error.message;
+    return;
+  }
+
+  if (data.user) {
+    document.getElementById('nome-cliente').textContent =
+      'Ciao, ' + [nome, cognome].filter(Boolean).join(' ') + '!';
+
+    document.getElementById('email-cliente').textContent =
+      data.user.email || nuovaEmail;
+  }
+
+  formDati.hidden = true;
+
+  if (aggiornamento.email) {
+    messaggio.textContent =
+      'Dati salvati. Per cambiare email, controlla la nuova casella e conferma la modifica.';
+  } else {
+    messaggio.textContent = 'Dati personali aggiornati correttamente!';
+  }
+});
+
+esci.addEventListener('click', async () => {
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    messaggio.hidden = false;
+    messaggio.textContent = 'Errore: ' + error.message;
+  } else {
+    await aggiorna(null);
+  }
+});
+
+supabase.auth.onAuthStateChange((_event, session) => {
+  aggiorna(session);
+});
+
+const { data: { session } } = await supabase.auth.getSession();
+await aggiorna(session);
+</script>
+
+</body>
+</html>
