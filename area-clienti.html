@@ -527,7 +527,37 @@ esci.addEventListener('click', async () => {
   }
 });
 
+let timerInattivita;
+let utenteConnesso = false;
+
+function resetTimerInattivita() {
+  clearTimeout(timerInattivita);
+
+  if (!utenteConnesso) return;
+
+  timerInattivita = setTimeout(async () => {
+    await supabase.auth.signOut();
+    messaggio.hidden = false;
+    messaggio.textContent =
+      'Sessione chiusa dopo 15 minuti di inattività. Accedi nuovamente.';
+  }, 15 * 60 * 1000);
+}
+
+['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(evento => {
+  document.addEventListener(evento, () => {
+    if (utenteConnesso) resetTimerInattivita();
+  });
+});
+
 supabase.auth.onAuthStateChange((_event, session) => {
+  utenteConnesso = Boolean(session?.user);
+
+  if (utenteConnesso) {
+    resetTimerInattivita();
+  } else {
+    clearTimeout(timerInattivita);
+  }
+
   aggiorna(session);
 });
 
