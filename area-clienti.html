@@ -539,8 +539,8 @@ function resetTimerInattivita() {
     await supabase.auth.signOut();
     messaggio.hidden = false;
     messaggio.textContent =
-      'Sessione chiusa dopo 15 minuti di inattività. Accedi nuovamente.';
-  }, 15 * 60 * 1000);
+      'Sessione chiusa dopo 10 minuti di inattività. Accedi nuovamente.';
+  }, 10 * 60 * 1000);
 }
 
 ['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(evento => {
