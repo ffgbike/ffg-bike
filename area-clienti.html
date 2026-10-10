@@ -57,7 +57,21 @@
       color: white;
     }
 
-    #messaggio { overflow-wrap: anywhere; }
+    #messaggio,
+.messaggio {
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.messaggio {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: #f0c674;
+}
+
+.messaggio:empty {
+  display: none;
+}
   </style>
 </head>
 
@@ -92,6 +106,7 @@
   <input id="reg-conferma-password" type="password" minlength="8" autocomplete="new-password" required>
 
   <button type="submit">Registrati</button>
+<p id="messaggio-registrazione" class="messaggio" role="status" aria-live="polite"></p>
 </form>
 
     <hr style="margin-top:28px">
@@ -105,6 +120,7 @@
       <input id="login-password" type="password" required>
 
       <button type="submit">Accedi</button>
+      <p id="messaggio-accesso" class="messaggio" role="status" aria-live="polite"></p>
     </form>
 
     <p id="messaggio" role="status">Non hai effettuato l'accesso.</p>
@@ -296,86 +312,95 @@ try {
 }
 
 document.getElementById('registrazione')
-  .addEventListener('submit', async (e) => {
-    e.preventDefault();
+.addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-    messaggio.hidden = false;
-    messaggio.textContent = 'Registrazione in corso…';
+  const msgReg = document.getElementById('messaggio-registrazione');
+  msgReg.textContent = 'Registrazione in corso…';
 
-    const nome = document.getElementById('reg-nome').value.trim();
-    const cognome = document.getElementById('reg-cognome').value.trim();
-    const telefono = document.getElementById('reg-telefono').value.trim();
-    const dataNascita = document.getElementById('reg-data-nascita').value;
-    const email = document.getElementById('reg-email').value.trim();
-    const password = document.getElementById('reg-password').value;
-    const confermaPassword =
-      document.getElementById('reg-conferma-password').value;
+  const nome = document.getElementById('reg-nome').value.trim();
+  const cognome = document.getElementById('reg-cognome').value.trim();
+  const telefono = document.getElementById('reg-telefono').value.trim();
+  const dataNascita = document.getElementById('reg-data-nascita').value;
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confermaPassword =
+    document.getElementById('reg-conferma-password').value;
 
-    if (password !== confermaPassword) {
-      messaggio.textContent = 'Le due password non coincidono.';
-      return;
-    }
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          nome,
-          cognome,
-          telefono: telefono || null,
-          data_nascita: dataNascita
-        }
-      }
-    });
-
-    if (error) {
-      messaggio.textContent = 'Errore: ' + error.message;
-    } else if (data.session) {
-  try {
-    await salvaProfilo(
-      data.session.user,
-      nome,
-      cognome,
-      telefono,
-      dataNascita
-    );
-    await aggiorna(data.session);
-    messaggio.hidden = false;
-    messaggio.textContent = 'Registrazione completata!';
-  } catch (errore) {
-    messaggio.hidden = false;
-    messaggio.textContent =
-      'Account creato, ma errore nel salvataggio del profilo. Contatta l’assistenza.';
+  if (password !== confermaPassword) {
+    msgReg.textContent = 'Le due password non coincidono.';
+    return;
   }
 
-    } else {
-      messaggio.textContent =
-        'Registrazione avviata. Controlla la tua email per confermare l’account.';
+  const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: new URL(
+      'area-clienti.html',
+      window.location.href
+    ).href,
+    data: {
+      nome,
+      cognome,
+      telefono: telefono || null,
+      data_nascita: dataNascita
     }
-  });
+  }
+});
+
+if (error) {
+  msgReg.textContent = 'Errore: ' + error.message;
+  return;
+}
+
+  if (data.session) {
+    try {
+      await salvaProfilo(
+        data.session.user,
+        nome,
+        cognome,
+        telefono,
+        dataNascita
+      );
+
+      msgReg.textContent = 'Registrazione completata!';
+      await aggiorna(data.session);
+    } catch (errore) {
+      console.error('Errore profilo:', errore);
+      msgReg.textContent =
+        'Account creato, ma non è stato possibile salvare il profilo.';
+    }
+  } else {
+    msgReg.textContent =
+      'Registrazione avviata. Controlla la tua email per confermare l’account.';
+  }
+});
 
 document.getElementById('accesso')
-  .addEventListener('submit', async (e) => {
-    e.preventDefault();
+.addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-    messaggio.hidden = false;
-    messaggio.textContent = 'Accesso in corso…';
+  const msgLogin = document.getElementById('messaggio-accesso');
+  msgLogin.textContent = 'Accesso in corso…';
 
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (error) {
-      messaggio.textContent = 'Errore: ' + error.message;
-    } else {
-      await aggiorna(data.session);
-    }
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
   });
+
+  if (error) {
+    msgLogin.textContent = 'Errore: ' + error.message;
+    return;
+  }
+
+  msgLogin.textContent = '';
+  await aggiorna(data.session);
+});
+
 const pulsanteModifica = document.getElementById('modifica-dati');
 const formDati = document.getElementById('dati-personali-form');
 
@@ -447,7 +472,8 @@ formDati.addEventListener('submit', async (e) => {
   const { data, error } = await supabase.auth.updateUser(aggiornamento);
 
 if (error) {
-  messaggio.textContent = 'Errore aggiornamento account: ' + error.message;
+  messaggio.textContent =
+    'Errore aggiornamento account: ' + error.message;
   return;
 }
 
@@ -483,11 +509,11 @@ formDati.hidden = true;
 
 if (aggiornamento.email) {
   messaggio.textContent =
-    'Dati salvati. Per cambiare email, controlla la nuova casella e conferma la modifica.';
+    'Dati salvati. Controlla la nuova casella email per confermare il cambio di indirizzo.';
 } else {
-  messaggio.textContent = 'Dati personali aggiornati correttamente!';
-}
-
+  messaggio.textContent =
+    'Dati personali aggiornati correttamente!';
+}    
 });
 
 esci.addEventListener('click', async () => {
