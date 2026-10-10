@@ -207,12 +207,21 @@ async function verificaCliente(uid) {
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 220, height: 220 } },
           async (testo) => {
-            document.getElementById('cliente').value = testo.trim();
-            await scanner.stop();
-            scanner = null;
-            document.getElementById('scanner').innerHTML = '';
-            avviso('QR cliente letto.');
-          },
+  const uid = testo.trim();
+  document.getElementById('cliente').value = uid;
+
+  await scanner.stop();
+  scanner = null;
+  document.getElementById('scanner').innerHTML = '';
+
+  const verificato = await verificaCliente(uid);
+
+  if (verificato) {
+    avviso('Cliente verificato. Dati caricati.');
+  } else {
+    avviso('Impossibile caricare il profilo del cliente.');
+  }
+},
           () => {}
         );
       } catch (errore) {
