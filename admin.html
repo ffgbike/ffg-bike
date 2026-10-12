@@ -206,53 +206,147 @@ profiloVerificato = true;
 return true;
 }
 
+const CHIAVE_ATTIVITA_ADMIN = 'ffgbike_admin_ultima_attivita';
+const TEMPO_INATTIVITA_ADMIN = 10 * 60 * 1000;
+
 async function controllaAccesso() {
-const { data: { session } } = await db.auth.getSession();
+  const { data: { session } } = await db.auth.getSession();
 
-accesso.hidden = !!session;
-pannello.hidden = true;
+  accesso.hidden = !!session;
+  pannello.hidden = true;
 
-if (!session) return;
+  if (!session) {
+    localStorage.removeItem(CHIAVE_ATTIVITA_ADMIN);
+    return;
+  }
 
-const { data, error } = await db.rpc('is_admin');
+  const ultimaAttivita = Number(
+    localStorage.getItem(CHIAVE_ATTIVITA_ADMIN)
+  );
 
-if (error || data !== true) {
-await db.auth.signOut();
-accesso.hidden = false;
-pannello.hidden = true;
-avviso('Accesso amministratore non autorizzato.');
-return;
+  if (
+    !ultimaAttivita ||
+    Date.now() - ultimaAttivita >= TEMPO_INATTIVITA_ADMIN
+  ) {
+    await db.auth.signOut();
+    localStorage.removeItem(CHIAVE_ATTIVITA_ADMIN);
+    accesso.hidden = false;
+    pannello.hidden = true;
+    avviso('Sessione scaduta. Accedi nuovamente.');
+    return;
+  }
+
+  const { data, error } = await db.rpc('is_admin');
+
+  if (error || data !== true) {
+    await db.auth.signOut();
+    localStorage.removeItem(CHIAVE_ATTIVITA_ADMIN);
+    accesso.hidden = false;
+    pannello.hidden = true;
+    avviso('Accesso amministratore non autorizzato.');
+    return;
+  }
+
+  accesso.hidden = true;
+  pannello.hidden = false;
+  avviso('Accesso amministratore verificato.');
 }
 
-accesso.hidden = true;
-pannello.hidden = false;
-avviso('Accesso amministratore verificato.');
+let controlloInattivitaAdmin = false;
+let uscitaInCorsoAdmin = false;
+
+function registraAttivitaAdmin() {
+  if (pannello.hidden || uscitaInCorsoAdmin) return;
+
+  localStorage.setItem(
+    CHIAVE_ATTIVITA_ADMIN,
+    String(Date.now())
+  );
+}
+
+async function controllaInattivitaAdmin() {
+  if (uscitaInCorsoAdmin) return;
+
+  const { data: { session } } = await db.auth.getSession();
+
+  if (!session || pannello.hidden) return;
+
+  const ultimaAttivita = Number(
+    localStorage.getItem(CHIAVE_ATTIVITA_ADMIN)
+  );
+
+  if (
+    !ultimaAttivita ||
+    Date.now() - ultimaAttivita >= TEMPO_INATTIVITA_ADMIN
+  ) {
+    uscitaInCorsoAdmin = true;
+    avviso('Sessione scaduta per inattività. Accedi nuovamente.');
+
+    if (scanner) {
+      await scanner.stop().catch(() => {});
+      scanner = null;
+      document.getElementById('scanner').innerHTML = '';
+    }
+
+    await db.auth.signOut();
+    localStorage.removeItem(CHIAVE_ATTIVITA_ADMIN);
+    pannello.hidden = true;
+    accesso.hidden = false;
+    uscitaInCorsoAdmin = false;
+  }
+}
+
+function avviaControlloInattivitaAdmin() {
+  if (controlloInattivitaAdmin) return;
+  controlloInattivitaAdmin = true;
+
+  const eventiAttivita = [
+    'pointerdown',
+    'keydown',
+    'touchstart',
+    'scroll'
+  ];
+
+  eventiAttivita.forEach(evento => {
+    document.addEventListener(evento, registraAttivitaAdmin, {
+      passive: true
+    });
+  });
+
+  setInterval(controllaInattivitaAdmin, 15000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) controllaInattivitaAdmin();
+  });
+
+  window.addEventListener('pageshow', controllaInattivitaAdmin);
 }
 
 document.getElementById('btn-accesso').onclick = async () => {
-const pulsante = document.getElementById('btn-accesso');
-const email = document.getElementById('email').value.trim();
-const password = document.getElementById('password').value;
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
 
-pulsante.disabled = true;
+  if (!email || !password) {
+    avviso('Inserisci email e password.');
+    return;
+  }
 
-try {
-const { error } = await db.auth.signInWithPassword({
-email,
-password
-});
+  const { error } = await db.auth.signInWithPassword({
+    email,
+    password
+  });
 
-if (error) {
-avviso('Email o password non corretti. Riprova.');
-return;
-}
+  if (error) {
+    avviso('Email o password non corretti.');
+    return;
+  }
 
-await controllaAccesso();
-} catch (errore) {
-avviso('Errore durante l’accesso. Riprova.');
-} finally {
-pulsante.disabled = false;
-}
+  localStorage.setItem(
+    CHIAVE_ATTIVITA_ADMIN,
+    String(Date.now())
+  );
+
+  await controllaAccesso();
 };
 
 document.getElementById('btn-scansione').onclick = async () => {
@@ -446,6 +540,7 @@ await controllaAccesso();
 avviso('Sei uscito dal pannello.');
 };
 
+avviaControlloInattivitaAdmin();
 controllaAccesso();
 </script>
 </body>
