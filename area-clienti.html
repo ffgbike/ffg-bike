@@ -516,46 +516,145 @@ if (aggiornamento.email) {
 }    
 });
 
+const CHIAVE_ATTIVITA_CLIENTE = 'ffgbike_cliente_ultima_attivita';
+const TEMPO_INATTIVITA_CLIENTE = 10 * 60 * 1000;
+
+let timerInattivita;
+let utenteConnesso = false;
+let uscitaAutomaticaInCorso = false;
+
+function programmaControlloInattivita() {
+  clearTimeout(timerInattivita);
+
+  if (!utenteConnesso || uscitaAutomaticaInCorso) return;
+
+  let ultimaAttivita = Number(
+    localStorage.getItem(CHIAVE_ATTIVITA_CLIENTE)
+  );
+
+  if (!ultimaAttivita) {
+    ultimaAttivita = Date.now();
+    localStorage.setItem(
+      CHIAVE_ATTIVITA_CLIENTE,
+      String(ultimaAttivita)
+    );
+  }
+
+  const tempoRimanente =
+    TEMPO_INATTIVITA_CLIENTE - (Date.now() - ultimaAttivita);
+
+  if (tempoRimanente <= 0) {
+    void controllaScadenzaCliente();
+    return;
+  }
+
+  timerInattivita = setTimeout(
+    controllaScadenzaCliente,
+    Math.min(tempoRimanente, 15000)
+  );
+}
+
+async function controllaScadenzaCliente() {
+  if (!utenteConnesso || uscitaAutomaticaInCorso) return;
+
+  const ultimaAttivita = Number(
+    localStorage.getItem(CHIAVE_ATTIVITA_CLIENTE)
+  );
+
+  if (
+    ultimaAttivita &&
+    Date.now() - ultimaAttivita < TEMPO_INATTIVITA_CLIENTE
+  ) {
+    programmaControlloInattivita();
+    return;
+  }
+
+  uscitaAutomaticaInCorso = true;
+  clearTimeout(timerInattivita);
+
+  localStorage.removeItem(CHIAVE_ATTIVITA_CLIENTE);
+  document.getElementById('login-password').value = '';
+
+  await supabase.auth.signOut();
+
+  utenteConnesso = false;
+  await aggiorna(null);
+
+  messaggio.hidden = false;
+  messaggio.textContent =
+    'Sessione chiusa dopo 10 minuti di inattività. Accedi nuovamente.';
+
+  uscitaAutomaticaInCorso = false;
+}
+
+function registraAttivitaCliente() {
+  if (
+    !utenteConnesso ||
+    uscitaAutomaticaInCorso ||
+    document.hidden
+  ) return;
+
+  localStorage.setItem(
+    CHIAVE_ATTIVITA_CLIENTE,
+    String(Date.now())
+  );
+
+  programmaControlloInattivita();
+}
+
+['click', 'keydown', 'pointerdown', 'scroll', 'touchstart'].forEach(evento => {
+  document.addEventListener(evento, registraAttivitaCliente, {
+    passive: true
+  });
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    void controllaScadenzaCliente();
+  }
+});
+
+window.addEventListener('pageshow', () => {
+  void controllaScadenzaCliente();
+});
+
 esci.addEventListener('click', async () => {
+  clearTimeout(timerInattivita);
+
   const { error } = await supabase.auth.signOut();
 
   if (error) {
     messaggio.hidden = false;
     messaggio.textContent = 'Errore: ' + error.message;
-  } else {
-    await aggiorna(null);
+    programmaControlloInattivita();
+    return;
   }
-});
 
-let timerInattivita;
-let utenteConnesso = false;
+  localStorage.removeItem(CHIAVE_ATTIVITA_CLIENTE);
+  document.getElementById('login-password').value = '';
 
-function resetTimerInattivita() {
-  clearTimeout(timerInattivita);
-
-  if (!utenteConnesso) return;
-
-  timerInattivita = setTimeout(async () => {
-    await supabase.auth.signOut();
-    messaggio.hidden = false;
-    messaggio.textContent =
-      'Sessione chiusa dopo 10 minuti di inattività. Accedi nuovamente.';
-  }, 10 * 60 * 1000);
-}
-
-['click', 'keydown', 'mousemove', 'scroll', 'touchstart'].forEach(evento => {
-  document.addEventListener(evento, () => {
-    if (utenteConnesso) resetTimerInattivita();
-  });
+  utenteConnesso = false;
+  await aggiorna(null);
 });
 
 supabase.auth.onAuthStateChange((_event, session) => {
   utenteConnesso = Boolean(session?.user);
 
   if (utenteConnesso) {
-    resetTimerInattivita();
+    if (!Number(localStorage.getItem(CHIAVE_ATTIVITA_CLIENTE))) {
+      localStorage.setItem(
+        CHIAVE_ATTIVITA_CLIENTE,
+        String(Date.now())
+      );
+    }
+
+    programmaControlloInattivita();
   } else {
     clearTimeout(timerInattivita);
+
+    if (!uscitaAutomaticaInCorso) {
+      localStorage.removeItem(CHIAVE_ATTIVITA_CLIENTE);
+    }
   }
 
   aggiorna(session);
