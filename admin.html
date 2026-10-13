@@ -289,10 +289,14 @@ async function controllaInattivitaAdmin() {
     }
 
     await db.auth.signOut();
-    localStorage.removeItem(CHIAVE_ATTIVITA_ADMIN);
-    pannello.hidden = true;
-    accesso.hidden = false;
-    uscitaInCorsoAdmin = false;
+localStorage.removeItem(CHIAVE_ATTIVITA_ADMIN);
+
+document.getElementById('email').value = '';
+document.getElementById('password').value = '';
+
+pannello.hidden = true;
+accesso.hidden = false;
+uscitaInCorsoAdmin = false;
   }
 }
 

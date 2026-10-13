@@ -123,7 +123,32 @@
       <p id="messaggio-accesso" class="messaggio" role="status" aria-live="polite"></p>
     </form>
 
-    <p id="messaggio" role="status">Non hai effettuato l'accesso.</p>
+<button type="button" id="mostra-recupero">
+  Password dimenticata?
+</button>
+
+<form id="form-recupero" hidden>
+  <h3>Recupera la password</h3>
+  <p>Inserisci la tua email e riceverai un link per impostare una nuova password.</p>
+  <label for="recupero-email">Email</label>
+  <input id="recupero-email" type="email" autocomplete="email" required>
+  <button type="submit">Invia email di recupero</button>
+  <button type="button" id="annulla-recupero">Torna all'accesso</button>
+  <p id="messaggio-recupero" class="messaggio" role="status" aria-live="polite"></p>
+</form>
+
+<form id="form-nuova-password" hidden>
+  <h3>Scegli una nuova password</h3>
+  <label for="nuova-password">Nuova password</label>
+  <input id="nuova-password" type="password" minlength="8" autocomplete="new-password" required>
+  <label for="conferma-nuova-password">Conferma nuova password</label>
+  <input id="conferma-nuova-password" type="password" minlength="8" autocomplete="new-password" required>
+  <button type="submit">Salva nuova password</button>
+  <p id="messaggio-nuova-password" class="messaggio" role="status" aria-live="polite"></p>
+</form>
+
+<p id="messaggio" role="status">Non hai effettuato l'accesso.</p>
+
     <section id="scheda-personale" hidden>
   <h2 id="nome-cliente">Ciao!</h2>
   <p>IL TUO PROFILO</p>
@@ -229,6 +254,11 @@ async function salvaProfilo(user, nome, cognome, telefono, dataNascita) {
 const esci = document.getElementById('esci');
 
 async function aggiorna(session) {
+    if (recuperoPasswordAttivo) {
+    mostraSoloRecupero();
+    return;
+  }
+
   const scheda = document.getElementById('scheda-personale');
   const accesso = document.getElementById('accesso');
   const registrazione = document.getElementById('registrazione');
@@ -308,6 +338,9 @@ try {
     accesso.hidden = false;
     registrazione.hidden = false;
     esci.hidden = true;
+    document.getElementById('mostra-recupero').hidden = false;
+formRecupero.hidden = true;
+formNuovaPassword.hidden = true;
   }
 }
 
@@ -399,6 +432,101 @@ document.getElementById('accesso')
 
   msgLogin.textContent = '';
   await aggiorna(data.session);
+});
+
+const formRecupero = document.getElementById('form-recupero');
+const formNuovaPassword = document.getElementById('form-nuova-password');
+let recuperoPasswordAttivo = false;
+
+function mostraSoloRecupero() {
+  document.getElementById('registrazione').hidden = true;
+  document.getElementById('accesso').hidden = true;
+  document.getElementById('invito-accesso').hidden = true;
+  document.getElementById('mostra-recupero').hidden = true;
+  document.getElementById('scheda-personale').hidden = true;
+  document.getElementById('esci').hidden = true;
+  formRecupero.hidden = true;
+  formNuovaPassword.hidden = false;
+  messaggio.hidden = true;
+}
+
+document.getElementById('mostra-recupero').addEventListener('click', () => {
+  document.getElementById('recupero-email').value =
+    document.getElementById('login-email').value.trim();
+  document.getElementById('registrazione').hidden = true;
+  document.getElementById('accesso').hidden = true;
+  document.getElementById('invito-accesso').hidden = true;
+  document.getElementById('mostra-recupero').hidden = true;
+  formRecupero.hidden = false;
+  messaggio.hidden = true;
+});
+
+document.getElementById('annulla-recupero').addEventListener('click', () => {
+  formRecupero.hidden = true;
+  formNuovaPassword.hidden = true;
+  document.getElementById('registrazione').hidden = false;
+  document.getElementById('accesso').hidden = false;
+  document.getElementById('invito-accesso').hidden = false;
+  document.getElementById('mostra-recupero').hidden = false;
+});
+
+formRecupero.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const msg = document.getElementById('messaggio-recupero');
+  const email = document.getElementById('recupero-email').value.trim();
+
+  msg.textContent = 'Invio dell’email in corso…';
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: new URL('area-clienti.html', window.location.href).href
+  });
+
+  if (error) {
+    msg.textContent = 'Non è stato possibile inviare l’email. Riprova.';
+    console.error('Errore recupero password:', error);
+    return;
+  }
+
+  msg.textContent =
+    'Se l’indirizzo è registrato, riceverai un’email con le istruzioni per reimpostare la password.';
+});
+
+formNuovaPassword.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const msg = document.getElementById('messaggio-nuova-password');
+  const password = document.getElementById('nuova-password').value;
+  const conferma = document.getElementById('conferma-nuova-password').value;
+
+  if (password !== conferma) {
+    msg.textContent = 'Le due password non coincidono.';
+    return;
+  }
+
+  msg.textContent = 'Aggiornamento della password in corso…';
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    msg.textContent =
+      'Non è stato possibile aggiornare la password. Riprova dal link ricevuto via email.';
+    console.error('Errore aggiornamento password:', error);
+    return;
+  }
+
+  recuperoPasswordAttivo = false;
+  await supabase.auth.signOut();
+  localStorage.removeItem(CHIAVE_ATTIVITA_CLIENTE);
+
+  formNuovaPassword.hidden = true;
+  document.getElementById('nuova-password').value = '';
+  document.getElementById('conferma-nuova-password').value = '';
+
+  await aggiorna(null);
+  messaggio.hidden = false;
+  messaggio.textContent =
+    'Password aggiornata correttamente! Ora puoi accedere con la nuova password.';
 });
 
 const pulsanteModifica = document.getElementById('modifica-dati');
@@ -637,7 +765,18 @@ esci.addEventListener('click', async () => {
   await aggiorna(null);
 });
 
-supabase.auth.onAuthStateChange((_event, session) => {
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    recuperoPasswordAttivo = true;
+    mostraSoloRecupero();
+    return;
+  }
+
+  if (recuperoPasswordAttivo) {
+    mostraSoloRecupero();
+    return;
+  }
+
   utenteConnesso = Boolean(session?.user);
 
   if (utenteConnesso) {
@@ -647,21 +786,24 @@ supabase.auth.onAuthStateChange((_event, session) => {
         String(Date.now())
       );
     }
-
     programmaControlloInattivita();
   } else {
     clearTimeout(timerInattivita);
-
     if (!uscitaAutomaticaInCorso) {
       localStorage.removeItem(CHIAVE_ATTIVITA_CLIENTE);
     }
   }
 
-  aggiorna(session);
+  void aggiorna(session);
 });
 
 const { data: { session } } = await supabase.auth.getSession();
-await aggiorna(session);
+
+if (recuperoPasswordAttivo) {
+  mostraSoloRecupero();
+} else {
+  await aggiorna(session);
+}
 </script>
 
 </body>
