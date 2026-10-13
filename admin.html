@@ -529,15 +529,19 @@ pulsante.disabled = false;
 };
 
 document.getElementById('btn-esci').onclick = async () => {
-if (scanner) {
-await scanner.stop().catch(() => {});
-scanner = null;
-document.getElementById('scanner').innerHTML = '';
-}
+  if (scanner) {
+    await scanner.stop().catch(() => {});
+    scanner = null;
+    document.getElementById('scanner').innerHTML = '';
+  }
 
-await db.auth.signOut();
-await controllaAccesso();
-avviso('Sei uscito dal pannello.');
+  await db.auth.signOut();
+
+  document.getElementById('email').value = '';
+  document.getElementById('password').value = '';
+
+  await controllaAccesso();
+  avviso('Sei uscito dal pannello.');
 };
 
 avviaControlloInattivitaAdmin();
