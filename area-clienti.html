@@ -463,12 +463,11 @@ document.getElementById('accesso')
   });
 
   if (error) {
-    msgLogin.textContent = 'Errore: ' + error.message;
-    return;
-  }
-
-  msgLogin.textContent = '';
-  await aggiorna(data.session);
+  msgLogin.textContent = traduciErroreAuth(error);
+  return;
+}
+msgLogin.textContent = '';
+await aggiorna(data.session);
 });
 
 const formRecupero = document.getElementById('form-recupero');
