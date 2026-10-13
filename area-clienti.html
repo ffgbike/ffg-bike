@@ -245,7 +245,7 @@ function traduciErroreAuth(errore) {
     testo.includes('weak_password') ||
     errore?.code === 'weak_password'
   ) {
-    return 'La password deve contenere almeno una lettera minuscola, una maiuscola, un numero e un simbolo.';
+    return 'La password deve contenere almeno una lettera minuscola, una maiuscola, un numero e un carattere speciale.';
   }
 
   if (
