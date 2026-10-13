@@ -301,6 +301,9 @@ async function aggiorna(session) {
   const invitoAccesso = document.getElementById('invito-accesso');
 
   if (session?.user) {
+    document.getElementById('mostra-recupero').hidden = true;
+    formRecupero.hidden = true;
+    
     const utente = session.user;
     const email = utente.email || '';
 
