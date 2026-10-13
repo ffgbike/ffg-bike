@@ -246,6 +246,73 @@
                 font-size: 28px;
             }
         }
+        .contatti-griglia {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  max-width: 1000px;
+  margin: 35px auto 0;
+}
+
+.contatto-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px 20px;
+  background: var(--bianco);
+  color: var(--nero);
+  text-align: center;
+  text-decoration: none;
+  border: 1px solid rgba(63, 153, 149, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 5px 18px rgba(23, 25, 24, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.contatto-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 9px 24px rgba(23, 25, 24, 0.12);
+}
+
+.contatto-icona {
+  font-size: 32px;
+}
+
+.contatto-card h3 {
+  margin: 4px 0;
+  color: var(--nero);
+}
+
+.contatto-card p {
+  margin: 0;
+  color: var(--testo);
+  line-height: 1.5;
+}
+
+.contatto-link,
+.contatto-social a {
+  color: var(--petrolio);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.contatto-social a:hover,
+.contatto-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .contatti-griglia {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .contatto-card {
+    padding: 24px 16px;
+  }
+}
     </style>
     <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -367,21 +434,73 @@
         </section>
 
         <section id="contatti" class="contatti">
-            <h2 class="titolo-sezione">Vieni a trovarci</h2>
-            <p class="descrizione">
-                Hai bisogno di informazioni su una bici, una riparazione
-                o BIKE POINTS? Contattaci o passa in negozio.
-            </p>
+  <h2 class="titolo-sezione">Vieni a trovarci</h2>
 
-            <!-- Inseriremo qui indirizzo, telefono, orari e collegamenti ufficiali. -->
-            <div class="scheda">
-                <h3>F.F.G. BIKE di Ferioli</h3>
-                <p>
-                    Il tuo punto di riferimento per biciclette,
-                    mobilità elettrica e assistenza.
-                </p>
-            </div>
-        </section>
+  <p class="descrizione">
+    Hai bisogno di informazioni su una bici, una riparazione
+    o BIKE POINTS? Contattaci o passa in negozio.
+  </p>
+
+  <div class="contatti-griglia">
+
+    <a
+      class="contatto-card"
+      href="https://www.google.com/maps/search/?api=1&query=Via+XX+Settembre+56%2FA%2C+Bondeno+FE"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <span class="contatto-icona">📍</span>
+      <h3>Vieni in negozio</h3>
+      <p>Via XX Settembre, 56/A</p>
+      <p>Bondeno (FE)</p>
+      <span class="contatto-link">Apri le indicazioni →</span>
+    </a>
+
+    <a
+      class="contatto-card"
+      href="tel:+393442971073"
+    >
+      <span class="contatto-icona">☎️</span>
+      <h3>Chiamaci</h3>
+      <p>344 2971073</p>
+      <span class="contatto-link">Chiama il negozio →</span>
+    </a>
+
+    <a
+      class="contatto-card"
+      href="https://wa.me/393442971073"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <span class="contatto-icona">💬</span>
+      <h3>WhatsApp</h3>
+      <p>Scrivici per informazioni</p>
+      <span class="contatto-link">Apri la chat →</span>
+    </a>
+
+    <div class="contatto-card contatto-social">
+      <span class="contatto-icona">📱</span>
+      <h3>Seguici sui social</h3>
+
+      <a
+        href="https://www.instagram.com/f.f.g.bike?psln=emx2Z2hxMTA5bDU1&utm_source=qr"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Instagram →
+      </a>
+
+      <a
+        href="https://www.facebook.com/share/1HzhRRrxC1/?mibextid=wwXIfr"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Facebook →
+      </a>
+    </div>
+
+  </div>
+</section>
     </main>
 
     <footer>
