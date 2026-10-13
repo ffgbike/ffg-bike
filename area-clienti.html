@@ -234,25 +234,36 @@ const supabase = createClient(
 
 const messaggio = document.getElementById('messaggio');
 function traduciErroreAuth(errore) {
-  const testo = errore?.message || '';
+  const testo = (
+    errore?.message ||
+    errore?.msg ||
+    ''
+  ).toLowerCase();
 
-  if (testo.includes('should contain at least one character of each')) {
-    return 'La password deve contenere i diversi tipi di caratteri richiesti.';
+  if (
+    testo.includes('should contain at least one character of each') ||
+    testo.includes('weak_password') ||
+    errore?.code === 'weak_password'
+  ) {
+    return 'La password deve contenere almeno una lettera minuscola, una maiuscola, un numero e un simbolo.';
   }
 
-  if (testo.includes('Password should be at least')) {
-    return 'La password è troppo corta.';
+  if (
+    testo.includes('password should be at least') ||
+    testo.includes('password is too short')
+  ) {
+    return 'La password deve contenere almeno 8 caratteri.';
   }
 
-  if (testo.includes('Invalid login credentials')) {
+  if (testo.includes('invalid login credentials')) {
     return 'Email o password non corrette.';
   }
 
-  if (testo.includes('User already registered')) {
+  if (testo.includes('user already registered')) {
     return 'Esiste già un account con questa email.';
   }
 
-  if (testo.includes('Email not confirmed')) {
+  if (testo.includes('email not confirmed')) {
     return 'Devi prima confermare il tuo indirizzo email.';
   }
 
