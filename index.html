@@ -106,6 +106,36 @@
             max-width: 580px;
         }
 
+.galleria-negozio {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 1000px;
+  margin: 35px auto 0;
+}
+
+.galleria-negozio img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  background: transparent;
+  border-radius: 14px;
+  box-shadow: 0 5px 18px rgba(23, 25, 24, 0.10);
+}
+
+@media (max-width: 600px) {
+  .galleria-negozio {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .galleria-negozio img {
+    height: auto;
+    max-height: 320px;
+  }
+}
+
         .azioni {
             display: flex;
             gap: 12px;
@@ -185,6 +215,14 @@
             line-height: 1.65;
             margin-bottom: 0;
         }
+
+        .foto-officina {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 18px;
+  border-radius: 12px;
+}
 
         .fidelity {
             background: var(--nero);
@@ -357,6 +395,17 @@
                 Biciclette, mobilità elettrica, riparazioni e assistenza.
                 Siamo qui per accompagnarti in ogni pedalata.
             </p>
+<div class="galleria-negozio">
+  <img
+    src="images/negozio-interno-1.jpg"
+    alt="Vista del negozio F.F.G. BIKE verso l'ingresso"
+  >
+
+  <img
+    src="images/negozio-interno-2.jpg"
+    alt="Esposizione di biciclette e banco da lavoro F.F.G. BIKE"
+  >
+</div>
 
             <div class="azioni">
                 <a class="bottone primario" href="#servizi">Scopri i servizi</a>
@@ -387,6 +436,11 @@
                     <div class="icona">🔧</div>
                     <h3>Riparazioni e assistenza</h3>
                     <p>Manutenzione e riparazioni per aiutarti a tornare in sella.</p>
+                    <img
+  src="images/officina-al-lavoro.jpg"
+  alt="Al lavoro al banco dell'officina F.F.G. BIKE"
+  class="foto-officina"
+>
                 </article>
 
                 <article class="scheda">
