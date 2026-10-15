@@ -246,6 +246,55 @@
             background: #DDF0ED;
         }
 
+/* Sezione dei marchi */
+.marchi {
+background: var(--sfondo);
+}
+
+.marchi-intro {
+max-width: 750px;
+}
+
+.marchi-griglia {
+display: grid;
+grid-template-columns: repeat(5, minmax(0, 1fr));
+gap: 18px;
+margin-top: 30px;
+}
+
+.marchio-card {
+min-width: 0;
+min-height: 125px;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 20px;
+background: var(--bianco);
+border: 1px solid #DADDD9;
+border-radius: 14px;
+}
+
+.marchio-card img {
+display: block;
+width: 100%;
+max-width: 170px;
+max-height: 85px;
+object-fit: contain;
+}
+
+@media (max-width: 800px) {
+.marchi-griglia {
+grid-template-columns: repeat(3, minmax(0, 1fr));
+gap: 12px;
+}
+}
+
+@media (max-width: 480px) {
+.marchi-griglia {
+grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+}
+
         .contatti {
             background: var(--bianco);
         }
@@ -380,6 +429,8 @@
         <nav>
             <a href="#servizi">Servizi</a>
             <a href="#fidelity">BIKE POINTS</a>
+            <a href="#marchi">I nostri marchi</a>
+            <a href="chi-siamo.html">Chi siamo</a>
             <a href="#contatti">Contatti</a>
             <a href="area-clienti.html">Area personale</a>
         </nav>
@@ -486,6 +537,39 @@
                 <a class="bottone primario" href="#contatti">Chiedi informazioni</a>
             </div>
         </section>
+
+        <section id="marchi" class="marchi">
+  <h2 class="titolo-sezione">I nostri marchi</h2>
+
+  <p class="descrizione marchi-intro">
+    Da F.F.G. BIKE trovi una selezione di biciclette dei marchi
+    che abbiamo scelto per te. Alcuni modelli sono disponibili
+    in negozio, mentre altri possono essere ordinati in base
+    alle tue esigenze.
+  </p>
+
+  <div class="marchi-griglia">
+    <div class="marchio-card">
+      <img src="images/logo-italwin.png" alt="Italwin">
+    </div>
+
+    <div class="marchio-card">
+      <img src="images/logo-wayel.png" alt="Wayel">
+    </div>
+
+    <div class="marchio-card">
+      <img src="images/logo-armony.png" alt="Armony">
+    </div>
+
+    <div class="marchio-card">
+      <img src="images/logo-torpado.png" alt="Torpado">
+    </div>
+
+    <div class="marchio-card">
+      <img src="images/logo-garelli.png" alt="Garelli">
+    </div>
+  </div>
+</section>
 
         <section id="contatti" class="contatti">
   <h2 class="titolo-sezione">Vieni a trovarci</h2>
